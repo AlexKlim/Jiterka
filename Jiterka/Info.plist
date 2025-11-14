@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Jiterka needs access to your microphone to record your voice during meetings.</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Jiterka needs screen recording permission to capture other participants' audio from your meetings (Zoom, Google Meet, etc.). Combined with your microphone, this records complete meetings.</string>
+</dict>
+</plist>
