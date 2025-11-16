@@ -13,14 +13,25 @@ struct ProcessedTranscript: Codable {
     let speakerCount: Int
     let processedAt: Date
 
-    init(lines: [SpeakerLine], fullText: String, speakerCount: Int) {
+    var cleanedLines: [SpeakerLine]?
+    var cleanedFullText: String?
+    var cleanupError: String?
+
+    init(lines: [SpeakerLine], fullText: String, speakerCount: Int, cleanedLines: [SpeakerLine]? = nil, cleanedFullText: String? = nil, cleanupError: String? = nil) {
         self.lines = lines
         self.fullText = fullText
         self.speakerCount = speakerCount
         self.processedAt = Date()
+        self.cleanedLines = cleanedLines
+        self.cleanedFullText = cleanedFullText
+        self.cleanupError = cleanupError
     }
 
     var isEmpty: Bool {
         lines.isEmpty
+    }
+
+    var hasCleanedTranscript: Bool {
+        cleanedLines != nil && !(cleanedLines?.isEmpty ?? true)
     }
 }

@@ -22,6 +22,7 @@ struct RecordingDetailView: View {
     enum Tab: String, CaseIterable {
         case summary = "Summary"
         case transcript = "Transcript"
+        case rawTranscript = "Raw Transcript"
     }
 
     var body: some View {
@@ -47,7 +48,7 @@ struct RecordingDetailView: View {
                     } label: {
                         VStack(spacing: 8) {
                             HStack(spacing: 6) {
-                                Image(systemName: tab == .summary ? "doc.text.fill" : "text.bubble.fill")
+                                Image(systemName: tabIcon(for: tab))
                                     .font(.system(size: 14, weight: .medium))
                                 Text(tab.rawValue)
                                     .font(.system(size: 13, weight: .medium))
@@ -71,7 +72,8 @@ struct RecordingDetailView: View {
             }
 
             Group {
-                if selectedTab == .summary {
+                switch selectedTab {
+                case .summary:
                     if let transcript = recording.transcript {
                         SummaryView(summary: recording.summary)
                     } else if recording.isTranscribed {
@@ -84,7 +86,42 @@ struct RecordingDetailView: View {
                     } else {
                         ProcessingStateView(message: "Processing transcription...")
                     }
-                } else {
+
+                case .transcript:
+                    if let transcript = recording.transcript {
+                        if let cleanedLines = transcript.cleanedLines, !cleanedLines.isEmpty {
+                            ScrollView {
+                                TranscriptView(
+                                    lines: cleanedLines,
+                                    speakerCount: transcript.speakerCount
+                                )
+                                .padding(20)
+                            }
+                        } else if let cleanupError = transcript.cleanupError {
+                            EmptyStateView(
+                                icon: "exclamationmark.triangle.fill",
+                                title: "AI Cleanup Failed",
+                                message: "JiterBoost could not clean up the transcript: \(cleanupError)\n\nView the raw transcript instead.",
+                                iconColor: .orange
+                            )
+                        } else {
+                            ScrollView {
+                                TranscriptView(transcript: transcript)
+                                    .padding(20)
+                            }
+                        }
+                    } else if recording.isTranscribed {
+                        EmptyStateView(
+                            icon: "exclamationmark.triangle.fill",
+                            title: "Transcription Failed",
+                            message: "No speech detected in this recording",
+                            iconColor: .orange
+                        )
+                    } else {
+                        ProcessingStateView(message: "Processing transcription...")
+                    }
+
+                case .rawTranscript:
                     if let transcript = recording.transcript {
                         ScrollView {
                             TranscriptView(transcript: transcript)
@@ -217,6 +254,17 @@ struct RecordingDetailView: View {
 
         modelContext.delete(recording)
         dismiss()
+    }
+
+    private func tabIcon(for tab: Tab) -> String {
+        switch tab {
+        case .summary:
+            return "doc.text.fill"
+        case .transcript:
+            return "sparkles.rectangle.stack.fill"
+        case .rawTranscript:
+            return "text.bubble.fill"
+        }
     }
 
 }

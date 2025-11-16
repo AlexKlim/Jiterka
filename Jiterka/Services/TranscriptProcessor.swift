@@ -12,6 +12,16 @@ import Combine
 class TranscriptProcessor: ObservableObject {
     private let transcriptionManager = TranscriptionManager()
     private let diarizationManager = DiarizationManager()
+    private var jiterBoostService: JiterBoostService?
+
+    init() {
+        if JiterBoostConfig.isConfigured {
+            jiterBoostService = JiterBoostService(apiKey: JiterBoostConfig.apiKey)
+            print("✅ JiterBoost service initialized")
+        } else {
+            print("⚠️ JiterBoost API key not configured - text cleanup will be skipped")
+        }
+    }
 
     @available(macOS 26.0, *)
     func processAudio(url: URL) async throws -> ProcessedTranscript {
@@ -32,7 +42,35 @@ class TranscriptProcessor: ObservableObject {
             diarization: diarization
         )
 
+        if let jiterBoost = jiterBoostService {
+            do {
+                let (cleanedLines, cleanedFullText) = try await cleanupTranscript(mergedTranscript, using: jiterBoost)
+
+                return ProcessedTranscript(
+                    lines: mergedTranscript.lines,
+                    fullText: mergedTranscript.fullText,
+                    speakerCount: mergedTranscript.speakerCount,
+                    cleanedLines: cleanedLines,
+                    cleanedFullText: cleanedFullText
+                )
+            } catch {
+                return ProcessedTranscript(
+                    lines: mergedTranscript.lines,
+                    fullText: mergedTranscript.fullText,
+                    speakerCount: mergedTranscript.speakerCount,
+                    cleanupError: error.localizedDescription
+                )
+            }
+        }
+
         return mergedTranscript
+    }
+
+    private func cleanupTranscript(_ transcript: ProcessedTranscript, using jiterBoost: JiterBoostService) async throws -> ([SpeakerLine], String) {
+        let cleanedLines = try await jiterBoost.cleanupTranscription(transcript.lines)
+        let cleanedFullText = cleanedLines.map { $0.text }.joined(separator: " ")
+
+        return (cleanedLines, cleanedFullText)
     }
     
     private func mergeResults(

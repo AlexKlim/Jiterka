@@ -8,7 +8,18 @@
 import SwiftUI
 
 struct TranscriptView: View {
-    let transcript: ProcessedTranscript
+    let lines: [SpeakerLine]
+    let speakerCount: Int
+
+    init(transcript: ProcessedTranscript) {
+        self.lines = transcript.lines
+        self.speakerCount = transcript.speakerCount
+    }
+
+    init(lines: [SpeakerLine], speakerCount: Int) {
+        self.lines = lines
+        self.speakerCount = speakerCount
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -23,7 +34,7 @@ struct TranscriptView: View {
                         .foregroundStyle(Color.accentColor)
                 }
 
-                Text("\(transcript.speakerCount) speaker\(transcript.speakerCount == 1 ? "" : "s") detected")
+                Text("\(speakerCount) speaker\(speakerCount == 1 ? "" : "s") detected")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundStyle(.secondary)
@@ -31,7 +42,7 @@ struct TranscriptView: View {
             .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 16) {
-                ForEach(transcript.lines) { line in
+                ForEach(lines) { line in
                     TranscriptLineView(line: line)
                 }
             }
