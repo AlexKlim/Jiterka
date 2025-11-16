@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5A04C7BB2EC6A2C600095EEA /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = 5A04C7BA2EC6A2C600095EEA /* FluidAudio */; };
+		5A5B12962ECA7E8D00D74881 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5A5B12952ECA7E8D00D74881 /* MarkdownUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5A04C7BB2EC6A2C600095EEA /* FluidAudio in Frameworks */,
+				5A5B12962ECA7E8D00D74881 /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +86,7 @@
 			name = Jiterka;
 			packageProductDependencies = (
 				5A04C7BA2EC6A2C600095EEA /* FluidAudio */,
+				5A5B12952ECA7E8D00D74881 /* MarkdownUI */,
 			);
 			productName = Jiterka;
 			productReference = 5A2BEAA22EC5190000BE9636 /* Jiterka.app */;
@@ -115,6 +118,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5A04C7B92EC6A2C600095EEA /* XCRemoteSwiftPackageReference "FluidAudio" */,
+				5A5B12942ECA7E8D00D74881 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5A2BEAA32EC5190000BE9636 /* Products */;
@@ -407,6 +411,14 @@
 				kind = branch;
 			};
 		};
+		5A5B12942ECA7E8D00D74881 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -414,6 +426,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 5A04C7B92EC6A2C600095EEA /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
+		};
+		5A5B12952ECA7E8D00D74881 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5A5B12942ECA7E8D00D74881 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

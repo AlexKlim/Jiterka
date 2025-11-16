@@ -17,6 +17,8 @@ final class Recording {
     var transcriptData: Data?
     var isTranscribed: Bool = false
     var summary: String?
+    var isSummarized: Bool = false
+    var isSynced: Bool = false
 
     init(timestamp: Date, duration: TimeInterval, name: String, fileURL: String? = nil) {
         self.timestamp = timestamp
@@ -26,6 +28,8 @@ final class Recording {
         self.transcriptData = nil
         self.isTranscribed = false
         self.summary = nil
+        self.isSummarized = false
+        self.isSynced = false
     }
 
     var transcript: ProcessedTranscript? {

@@ -17,6 +17,8 @@ struct RecordingDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirmation = false
     @State private var isRegenerating = false
+    @State private var isSyncing = false
+    @State private var syncError: String?
     @State private var selectedTab: Tab = .summary
 
     enum Tab: String, CaseIterable {
@@ -29,7 +31,15 @@ struct RecordingDetailView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 20) {
-                    RecordingHeaderView(recording: recording)
+                    RecordingHeaderView(
+                        recording: recording,
+                        isSyncing: isSyncing,
+                        onSync: {
+                            Task {
+                                await syncRecording()
+                            }
+                        }
+                    )
 
                     if recording.fileURL != nil {
                         AudioPlayerView(playerManager: playerManager)
@@ -74,8 +84,12 @@ struct RecordingDetailView: View {
             Group {
                 switch selectedTab {
                 case .summary:
-                    if let transcript = recording.transcript {
-                        SummaryView(summary: recording.summary)
+                    if recording.transcript != nil {
+                        if recording.isSummarized {
+                            SummaryView(summary: recording.summary)
+                        } else {
+                            ProcessingStateView(message: "Generating summary...")
+                        }
                     } else if recording.isTranscribed {
                         EmptyStateView(
                             icon: "exclamationmark.triangle.fill",
@@ -101,7 +115,7 @@ struct RecordingDetailView: View {
                             EmptyStateView(
                                 icon: "exclamationmark.triangle.fill",
                                 title: "AI Cleanup Failed",
-                                message: "JiterBoost could not clean up the transcript: \(cleanupError)\n\nView the raw transcript instead.",
+                                message: "JiteraBoost could not clean up the transcript: \(cleanupError)\n\nView the raw transcript instead.",
                                 iconColor: .orange
                             )
                         } else {
@@ -182,6 +196,15 @@ struct RecordingDetailView: View {
         } message: {
             Text("Are you sure you want to delete this recording? This action cannot be undone.")
         }
+        .alert("Sync Failed", isPresented: .constant(syncError != nil)) {
+            Button("OK", role: .cancel) {
+                syncError = nil
+            }
+        } message: {
+            if let error = syncError {
+                Text(error)
+            }
+        }
         .onAppear {
             loadRecordingAudio()
         }
@@ -214,15 +237,36 @@ struct RecordingDetailView: View {
 
         do {
             recording.transcript = nil
+            recording.summary = nil
             recording.isTranscribed = false
+            recording.isSummarized = false
+            recording.isSynced = false
             try? modelContext.save()
-            
+
             let transcript = try await transcriptProcessor.processAudio(url: audioURL)
 
             recording.transcript = transcript
             try? modelContext.save()
 
             print("✅ Transcription regenerated successfully")
+
+            if JiteraBoostConfig.isConfigured {
+                do {
+                    let summary = try await transcriptProcessor.generateSummary(for: transcript)
+                    recording.summary = summary
+                    recording.isSummarized = true
+                    try? modelContext.save()
+                    print("✅ Summary regenerated successfully")
+                } catch {
+                    print("❌ Failed to regenerate summary: \(error.localizedDescription)")
+                    recording.isSummarized = true
+                    try? modelContext.save()
+                }
+            } else {
+                print("⚠️ JiteraBoost not configured - skipping summary generation")
+                recording.isSummarized = true
+                try? modelContext.save()
+            }
         } catch {
             recording.isTranscribed = true
             try? modelContext.save()
@@ -254,6 +298,36 @@ struct RecordingDetailView: View {
 
         modelContext.delete(recording)
         dismiss()
+    }
+
+    private func syncRecording() async {
+        guard let summary = recording.summary,
+              let transcript = recording.transcript else {
+            syncError = "Summary and transcript are required for sync"
+            return
+        }
+
+        isSyncing = true
+        syncError = nil
+        defer { isSyncing = false }
+
+        do {
+            let result = try await transcriptProcessor.syncToJitera(
+                name: recording.name,
+                date: recording.timestamp,
+                summary: summary,
+                transcript: transcript
+            )
+
+            if result.success {
+                recording.isSynced = true
+                try? modelContext.save()
+            } else {
+                syncError = result.message
+            }
+        } catch {
+            syncError = error.localizedDescription
+        }
     }
 
     private func tabIcon(for tab: Tab) -> String {

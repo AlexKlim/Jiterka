@@ -112,6 +112,24 @@ struct RecordingsView: View {
             let transcript = try await transcriptProcessor.processAudio(url: audioURL)
             recording.transcript = transcript
             try? modelContext.save()
+
+            if JiteraBoostConfig.isConfigured {
+                do {
+                    let summary = try await transcriptProcessor.generateSummary(for: transcript)
+                    recording.summary = summary
+                    recording.isSummarized = true
+                    try? modelContext.save()
+                    print("✅ Summary generated successfully")
+                } catch {
+                    print("❌ Failed to generate summary: \(error.localizedDescription)")
+                    recording.isSummarized = true
+                    try? modelContext.save()
+                }
+            } else {
+                print("⚠️ JiteraBoost not configured - skipping summary generation")
+                recording.isSummarized = true
+                try? modelContext.save()
+            }
         } catch {
             recording.isTranscribed = true
             try? modelContext.save()

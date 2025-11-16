@@ -12,14 +12,18 @@ import Combine
 class TranscriptProcessor: ObservableObject {
     private let transcriptionManager = TranscriptionManager()
     private let diarizationManager = DiarizationManager()
-    private var jiterBoostService: JiterBoostService?
+    private var transcriptCleaner: JiteraTranscriptCleaner?
+    private var summarizer: JiteraSummarizer?
+    private var documentSync: JiteraDocumentSync?
 
     init() {
-        if JiterBoostConfig.isConfigured {
-            jiterBoostService = JiterBoostService(apiKey: JiterBoostConfig.apiKey)
-            print("✅ JiterBoost service initialized")
+        if JiteraBoostConfig.isConfigured {
+            transcriptCleaner = JiteraTranscriptCleaner(apiKey: JiteraBoostConfig.apiKey)
+            summarizer = JiteraSummarizer(apiKey: JiteraBoostConfig.apiKey)
+            documentSync = JiteraDocumentSync(apiKey: JiteraBoostConfig.apiKey)
+            print("✅ JiteraBoost services initialized")
         } else {
-            print("⚠️ JiterBoost API key not configured - text cleanup will be skipped")
+            print("⚠️ JiteraBoost API key not configured - AI features will be skipped")
         }
     }
 
@@ -42,9 +46,10 @@ class TranscriptProcessor: ObservableObject {
             diarization: diarization
         )
 
-        if let jiterBoost = jiterBoostService {
+        if let cleaner = transcriptCleaner {
             do {
-                let (cleanedLines, cleanedFullText) = try await cleanupTranscript(mergedTranscript, using: jiterBoost)
+                let cleanedLines = try await cleaner.cleanupTranscription(mergedTranscript.lines)
+                let cleanedFullText = cleanedLines.map { $0.text }.joined(separator: " ")
 
                 return ProcessedTranscript(
                     lines: mergedTranscript.lines,
@@ -66,11 +71,47 @@ class TranscriptProcessor: ObservableObject {
         return mergedTranscript
     }
 
-    private func cleanupTranscript(_ transcript: ProcessedTranscript, using jiterBoost: JiterBoostService) async throws -> ([SpeakerLine], String) {
-        let cleanedLines = try await jiterBoost.cleanupTranscription(transcript.lines)
-        let cleanedFullText = cleanedLines.map { $0.text }.joined(separator: " ")
+    func generateSummary(for transcript: ProcessedTranscript) async throws -> String {
+        guard let summarizer = summarizer else {
+            throw TranscriptionError.processingFailed
+        }
 
-        return (cleanedLines, cleanedFullText)
+        do {
+            let summary = try await summarizer.generateSummary(from: transcript)
+            let markdown = summarizer.formatSummaryAsMarkdown(summary)
+            return markdown
+        } catch {
+            print("❌ Failed to generate summary: \(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    func syncToJitera(
+        name: String,
+        date: Date,
+        summary: String,
+        transcript: ProcessedTranscript
+    ) async throws -> JiteraDocumentSync.SyncResult {
+        guard let documentSync = documentSync else {
+            throw TranscriptionError.processingFailed
+        }
+
+        let transcriptToSync = transcript.cleanedLines ?? transcript.lines
+
+        do {
+            print("🔄 Syncing recording to Jitera...")
+            let result = try await documentSync.syncRecording(
+                name: name,
+                date: date,
+                summary: summary,
+                cleanedTranscript: transcriptToSync
+            )
+            print("✅ Sync completed: \(result.message)")
+            return result
+        } catch {
+            print("❌ Failed to sync to Jitera: \(error.localizedDescription)")
+            throw error
+        }
     }
     
     private func mergeResults(
