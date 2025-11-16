@@ -11,28 +11,70 @@ struct TranscriptLineView: View {
     let line: SpeakerLine
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(formatSpeakerName(line.speakerId))
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.blue)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(4)
+        HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(speakerColor.opacity(0.15))
+                    .frame(width: 36, height: 36)
 
-                Text(formatTimestamp(line.startTime))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .monospacedDigit()
+                Image(systemName: "person.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(speakerColor)
             }
 
-            Text(line.text)
-                .font(.body)
-                .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text(formatSpeakerName(line.speakerId))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(speakerColor)
+
+                    Text("•")
+                        .foregroundStyle(.secondary)
+
+                    Text(formatTimestamp(line.startTime))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+
+                    Spacer()
+                }
+
+                Text(line.text)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+                    .lineSpacing(4)
+            }
         }
-        .padding(.horizontal)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+    }
+
+    private var speakerColor: Color {
+        let colors: [Color] = [
+            .blue,
+            .purple,
+            .green,
+            .orange,
+            .pink,
+            .cyan
+        ]
+
+        if line.speakerId.starts(with: "SPEAKER_") {
+            let number = line.speakerId.replacingOccurrences(of: "SPEAKER_", with: "")
+            if let num = Int(number), num > 0 {
+                return colors[(num - 1) % colors.count]
+            }
+        }
+        return .secondary
     }
 
     private func formatSpeakerName(_ speakerId: String) -> String {

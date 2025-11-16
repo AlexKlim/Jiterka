@@ -11,8 +11,17 @@ struct AudioPlayerView: View {
     @ObservedObject var playerManager: AudioPlayerManager
 
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 8) {
+        VStack(spacing: 20) {
+            HStack(spacing: 2) {
+                ForEach(0..<40) { i in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(playerManager.isPlaying ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .frame(width: 3, height: CGFloat.random(in: 8...32))
+                }
+            }
+            .frame(height: 40)
+
+            VStack(spacing: 10) {
                 Slider(
                     value: Binding(
                         get: { playerManager.currentTime },
@@ -20,32 +29,42 @@ struct AudioPlayerView: View {
                     ),
                     in: 0...max(playerManager.duration, 1)
                 )
+                .tint(Color.accentColor)
                 .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
 
                 HStack {
                     Text(formatTime(playerManager.currentTime))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .monospacedDigit()
                     Spacer()
                     Text(formatTime(playerManager.duration))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
             }
-            .padding(.horizontal)
 
-            HStack(spacing: 30) {
+            HStack(spacing: 24) {
                 Button {
                     playerManager.stop()
                 } label: {
                     Image(systemName: "stop.fill")
-                        .font(.title2)
-                        .foregroundColor(.primary)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color(NSColor.controlBackgroundColor))
+                        )
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                        )
                 }
                 .buttonStyle(.plain)
                 .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
+                .opacity((!playerManager.isPlaying && playerManager.currentTime == 0) ? 0.4 : 1)
 
                 Button {
                     if playerManager.isPlaying {
@@ -55,23 +74,38 @@ struct AudioPlayerView: View {
                     }
                 } label: {
                     Image(systemName: playerManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 64))
+                        .font(.system(size: 56))
+                        .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
+                .scaleEffect(playerManager.isPlaying ? 1.0 : 1.0)
+                .animation(.spring(response: 0.3), value: playerManager.isPlaying)
             }
 
             if let error = playerManager.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundColor(.red)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.orange.opacity(0.1))
+                )
             }
         }
-        .padding()
-        .background(Color(NSColor.controlBackgroundColor))
-        .cornerRadius(12)
-        .padding(.horizontal)
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
     }
 
     private func formatTime(_ time: TimeInterval) -> String {

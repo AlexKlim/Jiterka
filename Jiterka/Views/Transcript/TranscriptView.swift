@@ -12,31 +12,29 @@ struct TranscriptView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Transcript")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.horizontal)
-
             HStack(spacing: 12) {
-                Image(systemName: "person.2.fill")
-                    .foregroundColor(.secondary)
-                Text("\(transcript.speakerCount) speaker(s) detected")
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor.opacity(0.1))
+                        .frame(width: 32, height: 32)
+
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.accentColor)
+                }
+
+                Text("\(transcript.speakerCount) speaker\(transcript.speakerCount == 1 ? "" : "s") detected")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.horizontal)
+            .padding(.bottom, 8)
 
-            Divider()
-
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 ForEach(transcript.lines) { line in
                     TranscriptLineView(line: line)
                 }
             }
         }
-        .padding(.vertical)
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-        .cornerRadius(12)
-        .padding(.horizontal)
     }
 }

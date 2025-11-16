@@ -13,6 +13,7 @@ enum TranscriptionError: LocalizedError {
     case processingFailed
     case authorizationDenied
     case noTranscriptionAvailable
+    case languageNotSupported(String)
 
     var errorDescription: String? {
         switch self {
@@ -26,6 +27,8 @@ enum TranscriptionError: LocalizedError {
             return "Speech recognition authorization denied"
         case .noTranscriptionAvailable:
             return "No transcription available in analysis result"
+        case .languageNotSupported(let locale):
+            return "Language '\(locale)' is not supported for speech recognition"
         }
     }
 }

@@ -17,45 +17,93 @@ struct RecordingDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirmation = false
     @State private var isRegenerating = false
+    @State private var selectedTab: Tab = .summary
+
+    enum Tab: String, CaseIterable {
+        case summary = "Summary"
+        case transcript = "Transcript"
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 30) {
-                RecordingHeaderView(recording: recording)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 20) {
+                    RecordingHeaderView(recording: recording)
 
-                if recording.fileURL != nil {
-                    AudioPlayerView(playerManager: playerManager)
+                    if recording.fileURL != nil {
+                        AudioPlayerView(playerManager: playerManager)
+                    }
                 }
+                .padding(20)
+            }
+            .background(Color(NSColor.windowBackgroundColor))
 
-                if let transcript = recording.transcript {
-                    TranscriptView(transcript: transcript)
-                } else if recording.isTranscribed {
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.largeTitle)
-                            .foregroundColor(.orange)
-                        Text("Transcription failed")
-                            .font(.headline)
-                        Text("No speech detected in this recording")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+            HStack(spacing: 0) {
+                ForEach(Tab.allCases, id: \.self) { tab in
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedTab = tab
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                Image(systemName: tab == .summary ? "doc.text.fill" : "text.bubble.fill")
+                                    .font(.system(size: 14, weight: .medium))
+                                Text(tab.rawValue)
+                                    .font(.system(size: 13, weight: .medium))
+                            }
+                            .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.secondary)
+
+                            Rectangle()
+                                .fill(selectedTab == tab ? Color.accentColor : Color.clear)
+                                .frame(height: 2)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
                     }
-                    .padding()
-                    .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                } else {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                        Text("Processing transcription...")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding()
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(.bottom)
+            .background(Color(NSColor.controlBackgroundColor))
+            .overlay(alignment: .bottom) {
+                Divider()
+            }
+
+            Group {
+                if selectedTab == .summary {
+                    if let transcript = recording.transcript {
+                        SummaryView(summary: recording.summary)
+                    } else if recording.isTranscribed {
+                        EmptyStateView(
+                            icon: "exclamationmark.triangle.fill",
+                            title: "Transcription Failed",
+                            message: "No summary available without transcription",
+                            iconColor: .orange
+                        )
+                    } else {
+                        ProcessingStateView(message: "Processing transcription...")
+                    }
+                } else {
+                    if let transcript = recording.transcript {
+                        ScrollView {
+                            TranscriptView(transcript: transcript)
+                                .padding(20)
+                        }
+                    } else if recording.isTranscribed {
+                        EmptyStateView(
+                            icon: "exclamationmark.triangle.fill",
+                            title: "Transcription Failed",
+                            message: "No speech detected in this recording",
+                            iconColor: .orange
+                        )
+                    } else {
+                        ProcessingStateView(message: "Processing transcription...")
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .transition(.opacity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar {
