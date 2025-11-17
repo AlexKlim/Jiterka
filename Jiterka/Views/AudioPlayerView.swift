@@ -9,63 +9,12 @@ import SwiftUI
 
 struct AudioPlayerView: View {
     @ObservedObject var playerManager: AudioPlayerManager
+    @State private var isHoveringPlayPause = false
+    @State private var isHoveringStop = false
 
     var body: some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 2) {
-                ForEach(0..<40) { i in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(playerManager.isPlaying ? Color.accentColor : Color.secondary.opacity(0.3))
-                        .frame(width: 3, height: CGFloat.random(in: 8...32))
-                }
-            }
-            .frame(height: 40)
-
-            VStack(spacing: 10) {
-                Slider(
-                    value: Binding(
-                        get: { playerManager.currentTime },
-                        set: { playerManager.seek(to: $0) }
-                    ),
-                    in: 0...max(playerManager.duration, 1)
-                )
-                .tint(Color.accentColor)
-                .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
-
-                HStack {
-                    Text(formatTime(playerManager.currentTime))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                    Spacer()
-                    Text(formatTime(playerManager.duration))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
-
-            HStack(spacing: 24) {
-                Button {
-                    playerManager.stop()
-                } label: {
-                    Image(systemName: "stop.fill")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 44)
-                        .background(
-                            Circle()
-                                .fill(Color(NSColor.controlBackgroundColor))
-                        )
-                        .overlay(
-                            Circle()
-                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
-                .opacity((!playerManager.isPlaying && playerManager.currentTime == 0) ? 0.4 : 1)
-
+        VStack(spacing: 0) {
+            HStack(spacing: 16) {
                 Button {
                     if playerManager.isPlaying {
                         playerManager.pause()
@@ -73,31 +22,94 @@ struct AudioPlayerView: View {
                         playerManager.play()
                     }
                 } label: {
-                    Image(systemName: playerManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 56))
-                        .foregroundStyle(Color.accentColor)
+                    Image(systemName: playerManager.isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            Circle()
+                                .fill(Color.accentColor)
+                        )
+                        .scaleEffect(isHoveringPlayPause ? 1.05 : 1.0)
                 }
                 .buttonStyle(.plain)
-                .scaleEffect(playerManager.isPlaying ? 1.0 : 1.0)
-                .animation(.spring(response: 0.3), value: playerManager.isPlaying)
+                .onHover { hovering in
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        isHoveringPlayPause = hovering
+                    }
+                }
+
+                VStack(spacing: 4) {
+                    Slider(
+                        value: Binding(
+                            get: { playerManager.currentTime },
+                            set: { playerManager.seek(to: $0) }
+                        ),
+                        in: 0...max(playerManager.duration, 1)
+                    )
+                    .tint(Color.accentColor)
+                    .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
+                    .controlSize(.small)
+
+                    HStack {
+                        Text(formatTime(playerManager.currentTime))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+
+                        Spacer()
+
+                        Text(formatTime(playerManager.duration))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+
+                Button {
+                    playerManager.stop()
+                } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            Circle()
+                                .fill(Color(NSColor.controlBackgroundColor))
+                        )
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
+                        )
+                        .scaleEffect(isHoveringStop ? 1.05 : 1.0)
+                }
+                .buttonStyle(.plain)
+                .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
+                .opacity((!playerManager.isPlaying && playerManager.currentTime == 0) ? 0.3 : 1)
+                .onHover { hovering in
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        isHoveringStop = hovering
+                    }
+                }
             }
+            .padding(16)
 
             if let error = playerManager.errorMessage {
+                Divider()
+
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
                         .foregroundStyle(.orange)
                     Text(error)
-                        .font(.caption)
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
+                    Spacer()
                 }
                 .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.orange.opacity(0.1))
-                )
+                .background(Color.orange.opacity(0.05))
             }
         }
-        .padding(24)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(NSColor.controlBackgroundColor))

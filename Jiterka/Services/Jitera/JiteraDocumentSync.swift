@@ -37,43 +37,46 @@ class JiteraDocumentSync: JiteraBoostClient {
 
         let folderName = "\(name) (\(formattedDate))"
 
-        // Format cleaned transcript
         let transcriptionText = cleanedTranscript.map { line in
             let timestamp = formatTimestamp(line.startTime)
             return "[\(timestamp)] \(line.speakerId): \(line.text)"
         }.joined(separator: "\n\n")
 
         let systemPrompt = """
-        You are a document management assistant for Jitera. Your task is to create a structured folder hierarchy and save meeting documents.
+        You are a document management assistant for Jitera. Your task is to create and update a structured folder hierarchy and save meeting documents.
 
-        You have the ability to create folders and documents in the Jitera system.
+        You have the ability to create folders and documents in the Jitera system, as well as update existing documents.
 
         Please perform the following actions:
         1. Create a root folder called "Meeting Notes" (if it doesn't already exist)
-        2. Inside "Meeting Notes", create a subfolder with the meeting name and date
-        3. In that subfolder, create two documents:
+        2. Inside "Meeting Notes", create a subfolder with the meeting name and date (if it doesn't already exist)
+        3. In that subfolder, create or update two documents:
            - "Summary" - containing the meeting summary in markdown format
            - "Transcription" - containing the full cleaned transcription with timestamps
 
-        Ensure all folders and files are created successfully and return the paths to confirm.
+        IMPORTANT: If a document already exists (Summary or Transcription), UPDATE it by completely replacing its content with the new content. DO NOT create duplicate files. Always use the same file names.
+
+        Ensure all folders and files are created/updated successfully and return the paths to confirm.
         """
 
         let userPrompt = """
-        Please create the following folder structure and documents:
+        Please create or update the following folder structure and documents:
 
         **Folder Structure:**
         - Meeting Notes/
           - \(folderName)/
-            - Summary
-            - Transcription
+            - Summary (create new if doesn't exist, otherwise UPDATE/REPLACE content)
+            - Transcription (create new if doesn't exist, otherwise UPDATE/REPLACE content)
 
-        **Summary Content:**
+        **Summary Content (to be written/updated):**
         \(summary)
 
-        **Transcription Content:**
+        **Transcription Content (to be written/updated):**
         \(transcriptionText)
 
-        Please create these folders and documents, then confirm the operation with the full paths.
+        If the folder "Meeting Notes/\(folderName)/" already exists with Summary and/or Transcription files, UPDATE those files by replacing their entire content with the new content provided above. Do not create duplicate files.
+
+        Please process this operation and confirm with the full paths.
         """
 
         let responseSchema: [String: Any] = [
@@ -121,7 +124,6 @@ class JiteraDocumentSync: JiteraBoostClient {
             throw JiteraBoostError.noResult
         }
 
-        // Parse the JSON content
         let contentData = Data(firstChoice.message.content.utf8)
         let result = try JSONDecoder().decode(SyncResult.self, from: contentData)
 
