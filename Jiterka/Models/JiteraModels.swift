@@ -68,3 +68,23 @@ struct ActionItem: Codable {
     let task: String
     let priority: String?
 }
+
+// MARK: - Pyannote Diarization Models
+
+struct PyannoteDiarizationResponse: Codable {
+    let segments: [PyannoteSegment]
+    let numSpeakers: Int
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case segments
+        case numSpeakers = "num_speakers"
+        case error
+    }
+}
+
+struct PyannoteSegment: Codable {
+    let speaker: String
+    let start: Double
+    let end: Double
+}
