@@ -5,18 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7ee8d323-0b80-4d8e-9fdf-6b4755737502" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../Jiterka/Services/Jitera/PyannoteCloudService.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Jiterka/Services/Jitera/PyannoteDiarizationService.swift" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/PyannoteDiarization.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/prettier.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Jiterka/Models/JiteraModels.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Jiterka/Models/JiteraModels.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Jiterka/Services/DiarizationManager.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Jiterka/Services/DiarizationManager.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Jiterka/Views/Recording/RecordingDetailView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Jiterka/Views/Recording/RecordingDetailView.swift" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Jiterka/Views/RecordingsView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Jiterka/Views/RecordingsView.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/diarization_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/diarization_server.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,7 +44,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "com.intellij.lang.ruby.rbs.tools.collection.workspace.sync.RbsCollectionUpdateProjectActivity#LAST_UPDATE_TIMESTAMP": "1763421335566",
+    "com.intellij.lang.ruby.rbs.tools.collection.workspace.sync.RbsCollectionUpdateProjectActivity#LAST_UPDATE_TIMESTAMP": "1763422004540",
     "git-widget-placeholder": "main",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -81,7 +73,7 @@
       <option name="presentableId" value="Default" />
       <updated>1763421275312</updated>
       <workItem from="1763421276792" duration="370000" />
-      <workItem from="1763421945323" duration="37000" />
+      <workItem from="1763421945323" duration="258000" />
     </task>
     <servers />
   </component>
