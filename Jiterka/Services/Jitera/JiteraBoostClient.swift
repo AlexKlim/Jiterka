@@ -21,19 +21,30 @@ class JiteraBoostClient {
         userPrompt: String,
         responseSchema: [String: Any]
     ) async throws -> JiteraResponse {
-        let requestDict: [String: Any] = [
+        var requestDict: [String: Any] = [
             "model": "jitera/document_agent",
             "messages": [
                 ["role": "system", "content": systemPrompt],
                 ["role": "user", "content": userPrompt]
             ],
-            "response_format": responseSchema
+//            "com.jitera.boost": [
+//                "workflow": [
+//                    "values": [
+//                        "model": "claude-sonnet-4"
+//                    ]
+//                ]
+//            ]
         ]
+
+        if !responseSchema.isEmpty {
+            requestDict["response_format"] = responseSchema
+        }
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 300 // 5 minutes
         request.httpBody = try JSONSerialization.data(withJSONObject: requestDict)
 
         let (data, response) = try await URLSession.shared.data(for: request)
