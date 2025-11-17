@@ -15,7 +15,7 @@ class PyannoteCloudService {
     private var apiKey: String?
 
     private init() {
-        self.apiKey = "sk_83a1f6b04ce8418d92cad02bfc29763f" // ProcessInfo.processInfo.environment["PYANNOTE_API_KEY"]
+        self.apiKey = ProcessInfo.processInfo.environment["PYANNOTE_API_KEY"]
     }
 
     func setAPIKey(_ key: String) {
