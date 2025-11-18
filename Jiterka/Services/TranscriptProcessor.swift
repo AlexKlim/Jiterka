@@ -90,7 +90,8 @@ class TranscriptProcessor: ObservableObject {
         name: String,
         date: Date,
         summary: String,
-        transcript: ProcessedTranscript
+        transcript: ProcessedTranscript,
+        onProgress: ((String) -> Void)? = nil
     ) async throws -> JiteraDocumentSync.SyncResult {
         guard let documentSync = documentSync else {
             throw TranscriptionError.processingFailed
@@ -99,17 +100,15 @@ class TranscriptProcessor: ObservableObject {
         let transcriptToSync = transcript.cleanedLines ?? transcript.lines
 
         do {
-            print("🔄 Syncing recording to Jitera...")
             let result = try await documentSync.syncRecording(
                 name: name,
                 date: date,
                 summary: summary,
-                cleanedTranscript: transcriptToSync
+                cleanedTranscript: transcriptToSync,
+                onProgress: onProgress
             )
-            print("✅ Sync completed: \(result.message)")
             return result
         } catch {
-            print("❌ Failed to sync to Jitera: \(error.localizedDescription)")
             throw error
         }
     }

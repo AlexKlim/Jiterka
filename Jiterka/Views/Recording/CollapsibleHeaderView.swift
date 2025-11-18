@@ -9,8 +9,8 @@ import SwiftUI
 
 struct CollapsibleHeaderView: View {
     let recording: Recording
-    let isSyncing: Bool
     let onSync: () -> Void
+    let onShowSyncPanel: () -> Void
     @Binding var isExpanded: Bool
     @StateObject private var playerManager = AudioPlayerManager()
     @State private var isHoveringCollapsedHeader = false
@@ -21,8 +21,8 @@ struct CollapsibleHeaderView: View {
                 VStack(spacing: 20) {
                     RecordingHeaderView(
                         recording: recording,
-                        isSyncing: isSyncing,
-                        onSync: onSync
+                        onSync: onSync,
+                        onShowSyncPanel: onShowSyncPanel
                     )
 
                     if recording.fileURL != nil {
@@ -56,8 +56,8 @@ struct CollapsibleHeaderView: View {
 
                     SyncButton(
                         recording: recording,
-                        isSyncing: isSyncing,
                         onSync: onSync,
+                        onShowSyncPanel: onShowSyncPanel,
                         style: .compact
                     )
                 }

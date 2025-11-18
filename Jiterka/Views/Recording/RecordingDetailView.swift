@@ -18,6 +18,7 @@ struct RecordingDetailView: View {
     @State private var showDeleteConfirmation = false
     @State private var selectedTab: Tab = .summary
     @State private var isHeaderExpanded = false
+    @State private var showSyncPanel = false
 
     enum Tab: String, CaseIterable {
         case summary = "Summary"
@@ -26,30 +27,51 @@ struct RecordingDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        HStack(spacing: 0) {
             VStack(spacing: 0) {
-                CollapsibleHeaderView(
+                VStack(spacing: 0) {
+                    CollapsibleHeaderView(
+                        recording: recording,
+                        onSync: {
+                            showSyncPanel = true
+                            Task {
+                                await viewModel.syncRecording(recording, modelContext: modelContext)
+                            }
+                        },
+                        onShowSyncPanel: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                showSyncPanel = true
+                            }
+                        },
+                        isExpanded: $isHeaderExpanded
+                    )
+
+                    Divider()
+
+                    tabBar
+
+                    Divider()
+                }
+
+                RecordingTabContentView(
                     recording: recording,
-                    isSyncing: viewModel.isSyncing,
-                    onSync: {
-                        Task {
-                            await viewModel.syncRecording(recording, modelContext: modelContext)
-                        }
-                    },
-                    isExpanded: $isHeaderExpanded
+                    selectedTab: selectedTab
                 )
-
-                Divider()
-
-                tabBar
-
-                Divider()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            RecordingTabContentView(
-                recording: recording,
-                selectedTab: selectedTab
-            )
+            if showSyncPanel {
+                Divider()
+
+                SyncProgressPanel(
+                    recordingName: viewModel.syncRecordingName,
+                    recordingDate: viewModel.syncRecordingDate,
+                    isSyncing: viewModel.isSyncing,
+                    messages: viewModel.syncMessages,
+                    isVisible: $showSyncPanel
+                )
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar {
@@ -70,7 +92,7 @@ struct RecordingDetailView: View {
                 .help("Regenerate transcription and speaker diarization")
             }
 
-            ToolbarItem(placement: .destructiveAction) {
+            ToolbarItem(placement: .automatic) {
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {

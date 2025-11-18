@@ -13,8 +13,31 @@ class RecordingDetailViewModel: ObservableObject {
     @Published var isRegenerating = false
     @Published var isSyncing = false
     @Published var syncError: String?
+    @Published var syncMessages: [SyncMessage] = []
+    @Published var syncRecordingName: String = ""
+    @Published var syncRecordingDate: Date = Date()
 
     private let transcriptProcessor = TranscriptProcessor()
+
+    private func addMessage(_ text: String, type: SyncMessage.MessageType, aiResponse: String? = nil) {
+        let message = SyncMessage(
+            timestamp: Date(),
+            text: text,
+            type: type,
+            aiResponse: aiResponse
+        )
+        syncMessages.append(message)
+    }
+
+    private func updateLastMessage(type: SyncMessage.MessageType, aiResponse: String? = nil) {
+        guard let lastIndex = syncMessages.indices.last else { return }
+        var updatedMessage = syncMessages[lastIndex]
+        updatedMessage.type = type
+        if let aiResponse = aiResponse {
+            updatedMessage.aiResponse = aiResponse
+        }
+        syncMessages[lastIndex] = updatedMessage
+    }
 
     @MainActor
     func regenerateTranscript(for recording: Recording, modelContext: ModelContext) async {
@@ -79,29 +102,58 @@ class RecordingDetailViewModel: ObservableObject {
         guard let summary = recording.summary,
               let transcript = recording.transcript else {
             syncError = "Summary and transcript are required for sync"
+            addMessage("Sync failed: Summary and transcript are required", type: .error)
             return
         }
 
+        guard SyncCoordinator.shared.canStartSync(for: recording.id) else {
+            syncError = "Another recording is currently syncing. Please wait."
+            addMessage("Another recording is currently syncing", type: .error)
+            return
+        }
+    
+        syncRecordingName = recording.name
+        syncRecordingDate = recording.timestamp
+        
+        syncMessages.removeAll()
         isSyncing = true
         syncError = nil
-        defer { isSyncing = false }
+        SyncCoordinator.shared.startSync(for: recording.id)
+
+        defer {
+            isSyncing = false
+            SyncCoordinator.shared.endSync(for: recording.id)
+        }
+
+        addMessage("Starting sync to Jitera...", type: .info)
 
         do {
             let result = try await transcriptProcessor.syncToJitera(
                 name: recording.name,
                 date: recording.timestamp,
                 summary: summary,
-                transcript: transcript
+                transcript: transcript,
+                onProgress: { [weak self] (message: String) in
+                    guard let self = self else { return }                    
+                    if message.hasPrefix("✅") {
+                        self.updateLastMessage(type: .success)
+                    } else {
+                        self.addMessage(message, type: .inProgress)
+                    }
+                }
             )
 
             if result.success {
                 recording.isSynced = true
                 try? modelContext.save()
+                addMessage("Sync completed successfully", type: .success, aiResponse: result.aiResponse)
             } else {
                 syncError = result.message
+                addMessage("Sync failed: \(result.message)", type: .error, aiResponse: result.aiResponse)
             }
         } catch {
             syncError = error.localizedDescription
+            addMessage("Sync failed: \(error.localizedDescription)", type: .error)
         }
     }
 }

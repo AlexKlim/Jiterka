@@ -23,7 +23,10 @@ struct RecordingsView: View {
                 Section("Recordings") {
                     ForEach(recordings) { recording in
                         NavigationLink(value: recording) {
-                            RecordingRow(recording: recording)
+                            RecordingRow(
+                                recording: recording,
+                                isSelected: selectedRecording?.id == recording.id
+                            )
                         }
                         .contextMenu {
                             Button(role: .destructive) {

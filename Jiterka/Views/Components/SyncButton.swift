@@ -6,14 +6,27 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SyncButton: View {
     let recording: Recording
-    let isSyncing: Bool
     let onSync: () -> Void
+    let onShowSyncPanel: () -> Void
     let style: Style
 
+    @StateObject private var syncCoordinator = SyncCoordinator.shared
     @State private var isHovering = false
+
+    private var isThisRecordingSyncing: Bool {
+        syncCoordinator.isSyncingRecording(recording.id)
+    }
+
+    private var isOtherRecordingSyncing: Bool {
+        if let syncingId = syncCoordinator.syncingRecordingId {
+            return syncingId != recording.id
+        }
+        return false
+    }
 
     enum Style {
         case compact
@@ -64,15 +77,23 @@ struct SyncButton: View {
 
     var body: some View {
         CursorButton(
-            action: onSync,
-            isDisabled: isSyncing || !JiteraBoostConfig.isConfigured || recording.summary == nil || recording.transcript == nil,
+            action: {
+                if isThisRecordingSyncing {
+                    // Already syncing - show the panel
+                    onShowSyncPanel()
+                } else {
+                    // Not syncing - start sync
+                    onSync()
+                }
+            },
+            isDisabled: !isThisRecordingSyncing && (!JiteraBoostConfig.isConfigured || recording.summary == nil || recording.transcript == nil || isOtherRecordingSyncing),
             tooltip: syncButtonTooltip(),
             onHoverChange: { hovering in
                 isHovering = hovering
             }
         ) {
             HStack(spacing: style.spacing) {
-                if isSyncing {
+                if isThisRecordingSyncing {
                     ProgressView()
                         .controlSize(.small)
                         .frame(width: style.iconSize, height: style.iconSize)
@@ -103,7 +124,7 @@ struct SyncButton: View {
     }
 
     private func buttonText() -> String {
-        if isSyncing {
+        if isThisRecordingSyncing {
             return "Syncing..."
         } else if recording.isSynced {
             return isHovering ? "Re-Sync" : "Synced"
@@ -113,7 +134,7 @@ struct SyncButton: View {
     }
 
     private func buttonBackgroundColor() -> Color {
-        if recording.isSynced && !isSyncing && !isHovering {
+        if recording.isSynced && !isThisRecordingSyncing && !isHovering {
             return Color.green.opacity(0.1)
         } else {
             return Color.accentColor.opacity(0.1)
@@ -121,7 +142,7 @@ struct SyncButton: View {
     }
 
     private func buttonBorderColor() -> Color {
-        if recording.isSynced && !isSyncing && !isHovering {
+        if recording.isSynced && !isThisRecordingSyncing && !isHovering {
             return Color.green.opacity(0.3)
         } else {
             return Color.accentColor.opacity(0.3)
@@ -133,8 +154,10 @@ struct SyncButton: View {
             return "JiteraBoost API key not configured"
         } else if recording.summary == nil || recording.transcript == nil {
             return "Summary and transcript required for sync"
-        } else if isSyncing {
-            return "Syncing to Jitera..."
+        } else if isOtherRecordingSyncing {
+            return "Another recording is currently syncing"
+        } else if isThisRecordingSyncing {
+            return "Click to show sync progress"
         } else if recording.isSynced {
             return "Re-sync with Jitera"
         } else {

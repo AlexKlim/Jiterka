@@ -23,13 +23,15 @@ class JiteraDocumentSync: JiteraBoostClient {
         let summaryFilePath: String
         let transcriptionFilePath: String
         let message: String
+        let aiResponse: String?
     }
 
     func syncRecording(
         name: String,
         date: Date,
         summary: String,
-        cleanedTranscript: [SpeakerLine]
+        cleanedTranscript: [SpeakerLine],
+        onProgress: ((String) -> Void)? = nil
     ) async throws -> SyncResult {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MMM dd, yyyy"
@@ -52,38 +54,47 @@ class JiteraDocumentSync: JiteraBoostClient {
         let totalSize = summary.count + transcriptChunks.joined(separator: "\n\n").count
         let maxSizePerRequest = 15000 // ~15KB per request
 
+        onProgress?("📊 Content size: \(totalSize) characters, \(transcriptChunks.count) chunks")
+
         if totalSize > maxSizePerRequest {
-            print("⚠️  Content is large, will send in multiple requests")
+            onProgress?("⚠️ Content is large, will send in multiple requests")
             return try await syncInMultipleRequests(
                 folderName: folderName,
                 summary: summary,
-                transcriptChunks: transcriptChunks
+                transcriptChunks: transcriptChunks,
+                onProgress: onProgress
             )
         }
 
+        onProgress?("📤 Sending in single request")
         return try await syncInSingleRequest(
             folderName: folderName,
             summary: summary,
-            transcriptChunks: transcriptChunks
+            transcriptChunks: transcriptChunks,
+            onProgress: onProgress
         )
     }
 
     private func syncInMultipleRequests(
         folderName: String,
         summary: String,
-        transcriptChunks: [String]
+        transcriptChunks: [String],
+        onProgress: ((String) -> Void)?
     ) async throws -> SyncResult {
+        onProgress?("📤 Request 1/\(transcriptChunks.count): Creating folder structure and initial content")
         var result = try await syncChunk(
             folderName: folderName,
             summary: summary,
             transcriptChunks: [transcriptChunks[0]],
             isFirstRequest: true,
             chunkNumber: 1,
-            totalChunks: transcriptChunks.count
+            totalChunks: transcriptChunks.count,
+            onProgress: onProgress
         )
 
         for (index, chunk) in transcriptChunks.dropFirst().enumerated() {
             let chunkNumber = index + 2
+            onProgress?("📤 Request \(chunkNumber)/\(transcriptChunks.count): Appending chunk \(chunkNumber)")
 
             result = try await syncChunk(
                 folderName: folderName,
@@ -91,17 +102,20 @@ class JiteraDocumentSync: JiteraBoostClient {
                 transcriptChunks: [chunk],
                 isFirstRequest: false,
                 chunkNumber: chunkNumber,
-                totalChunks: transcriptChunks.count
+                totalChunks: transcriptChunks.count,
+                onProgress: onProgress
             )
         }
 
+        onProgress?("✅ All \(transcriptChunks.count) requests completed")
         return result
     }
 
     private func syncInSingleRequest(
         folderName: String,
         summary: String,
-        transcriptChunks: [String]
+        transcriptChunks: [String],
+        onProgress: ((String) -> Void)?
     ) async throws -> SyncResult {
         return try await syncChunk(
             folderName: folderName,
@@ -109,7 +123,8 @@ class JiteraDocumentSync: JiteraBoostClient {
             transcriptChunks: transcriptChunks,
             isFirstRequest: true,
             chunkNumber: 1,
-            totalChunks: 1
+            totalChunks: 1,
+            onProgress: onProgress
         )
     }
 
@@ -119,7 +134,8 @@ class JiteraDocumentSync: JiteraBoostClient {
         transcriptChunks: [String],
         isFirstRequest: Bool,
         chunkNumber: Int,
-        totalChunks: Int
+        totalChunks: Int,
+        onProgress: ((String) -> Void)?
     ) async throws -> SyncResult {
 
         let operation = isFirstRequest ? "CREATE/REPLACE" : "APPEND"
@@ -194,6 +210,8 @@ class JiteraDocumentSync: JiteraBoostClient {
             """
         }
 
+        onProgress?("🤖 Sending request \(chunkNumber)/\(totalChunks) to JiteraBoost AI...")
+
         let response = try await makeRequest(
             systemPrompt: systemPrompt,
             userPrompt: userPrompt,
@@ -203,13 +221,17 @@ class JiteraDocumentSync: JiteraBoostClient {
         guard let firstChoice = response.choices?.first else {
             throw JiteraBoostError.noResult
         }
-        
+
+        let aiResponseText = firstChoice.message.content
+        onProgress?("✅ Request \(chunkNumber)/\(totalChunks) completed")
+
         let result = SyncResult(
             success: true,
             folderPath: "Meeting Notes/\(folderName)",
             summaryFilePath: "Meeting Notes/\(folderName)/Summary",
             transcriptionFilePath: "Meeting Notes/\(folderName)/Transcription",
-            message: "Request \(chunkNumber)/\(totalChunks) completed"
+            message: "Request \(chunkNumber)/\(totalChunks) completed",
+            aiResponse: aiResponseText
         )
 
         return result

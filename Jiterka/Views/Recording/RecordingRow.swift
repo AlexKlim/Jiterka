@@ -6,9 +6,24 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RecordingRow: View {
     let recording: Recording
+    let isSelected: Bool
+
+    @StateObject private var syncCoordinator = SyncCoordinator.shared
+
+    private var isProcessing: Bool {
+        let isSyncing = syncCoordinator.isSyncingRecording(recording.id)
+        let isTranscribing = !recording.isTranscribed || !recording.isSummarized
+
+        return isSyncing || isTranscribing
+    }
+
+    private var shouldShowLoadingIndicator: Bool {
+        return isProcessing && !isSelected
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -21,6 +36,10 @@ struct RecordingRow: View {
                     .foregroundColor(.secondary)
 
                 Spacer()
+
+                if shouldShowLoadingIndicator {
+                    ProcessingIndicator()
+                }
 
                 Text(formatDuration(recording.duration))
                     .font(.caption)

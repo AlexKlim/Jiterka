@@ -9,8 +9,8 @@ import SwiftUI
 
 struct RecordingHeaderView: View {
     let recording: Recording
-    let isSyncing: Bool
     let onSync: () -> Void
+    let onShowSyncPanel: () -> Void
 
     var body: some View {
         HStack(spacing: 16) {
@@ -44,8 +44,8 @@ struct RecordingHeaderView: View {
 
             SyncButton(
                 recording: recording,
-                isSyncing: isSyncing,
                 onSync: onSync,
+                onShowSyncPanel: onShowSyncPanel,
                 style: .regular
             )
         }
