@@ -5,9 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7ee8d323-0b80-4d8e-9fdf-6b4755737502" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Jiterka/Views/Recording/RecordingDetailView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Jiterka/Views/Recording/RecordingDetailView.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Jiterka/Services/Jitera/PyannoteCloudService.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Jiterka/Services/Jitera/PyannoteCloudService.swift" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Jiterka/Views/RecordingsView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/../Jiterka/Views/RecordingsView.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/diarization_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/diarization_server.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -73,7 +73,7 @@
       <option name="presentableId" value="Default" />
       <updated>1763421275312</updated>
       <workItem from="1763421276792" duration="370000" />
-      <workItem from="1763421945323" duration="258000" />
+      <workItem from="1763421945323" duration="1601000" />
     </task>
     <servers />
   </component>

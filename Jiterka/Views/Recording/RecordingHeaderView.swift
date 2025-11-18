@@ -25,16 +25,20 @@ struct RecordingHeaderView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(recording.name)
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                EditableText(
+                    text: recording.name,
+                    font: .title3,
+                    fontWeight: .semibold
+                ) { newName in
+                    recording.name = newName
+                }
 
                 HStack(spacing: 12) {
                     Label(recording.timestamp.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    Label(formatDuration(recording.duration), systemImage: "clock")
+                    Label(recording.duration.formattedDurationReadable(), systemImage: "clock")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -58,19 +62,5 @@ struct RecordingHeaderView: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         )
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = Int(duration) / 60 % 60
-        let seconds = Int(duration) % 60
-
-        if hours > 0 {
-            return String(format: "%dh %dm %ds", hours, minutes, seconds)
-        } else if minutes > 0 {
-            return String(format: "%dm %ds", minutes, seconds)
-        } else {
-            return String(format: "%ds", seconds)
-        }
     }
 }

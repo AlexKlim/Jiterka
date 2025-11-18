@@ -19,7 +19,7 @@ class JiteraBoostClient {
     func makeRequest(
         systemPrompt: String,
         userPrompt: String,
-        responseSchema: [String: Any]
+        responseSchema: [String: Any] = [:]
     ) async throws -> JiteraResponse {
         var requestDict: [String: Any] = [
             "model": "jitera/document_agent",

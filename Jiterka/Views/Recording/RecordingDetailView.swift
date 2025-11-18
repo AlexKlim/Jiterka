@@ -7,18 +7,23 @@
 
 import SwiftUI
 import SwiftData
-import AVFoundation
 import AppKit
 
 struct RecordingDetailView: View {
     let recording: Recording
+    var recordingManager: ScreenCaptureAudioManager? = nil
+    var onStopRecording: (() -> Void)? = nil
+    var onRequestDelete: (() -> Void)? = nil
+
     @StateObject private var viewModel = RecordingDetailViewModel()
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    @State private var showDeleteConfirmation = false
     @State private var selectedTab: Tab = .summary
     @State private var isHeaderExpanded = false
     @State private var showSyncPanel = false
+
+    private var isRecording: Bool {
+        recordingManager?.isRecording ?? false
+    }
 
     enum Tab: String, CaseIterable {
         case summary = "Summary"
@@ -48,15 +53,20 @@ struct RecordingDetailView: View {
 
                     Divider()
 
-                    tabBar
-
-                    Divider()
+                    if !isRecording {
+                        tabBar
+                        Divider()
+                    }
                 }
 
-                RecordingTabContentView(
-                    recording: recording,
-                    selectedTab: selectedTab
-                )
+                if isRecording {
+                    recordingInProgressView
+                } else {
+                    RecordingTabContentView(
+                        recording: recording,
+                        selectedTab: selectedTab
+                    )
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -74,6 +84,16 @@ struct RecordingDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            if isRecording {
+                isHeaderExpanded = true
+            }
+        }
+        .onChange(of: isRecording) {
+            if isRecording {
+                isHeaderExpanded = true
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 Button {
@@ -94,24 +114,12 @@ struct RecordingDetailView: View {
 
             ToolbarItem(placement: .automatic) {
                 Button(role: .destructive) {
-                    showDeleteConfirmation = true
+                    onRequestDelete?()
                 } label: {
                     Label("Delete", systemImage: "trash")
                 }
                 .help("Delete this recording")
             }
-        }
-        .confirmationDialog(
-            "Delete Recording",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                deleteRecording()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Are you sure you want to delete this recording? This action cannot be undone.")
         }
         .alert("Sync Failed", isPresented: .constant(viewModel.syncError != nil)) {
             Button("OK", role: .cancel) {
@@ -122,6 +130,59 @@ struct RecordingDetailView: View {
                 Text(error)
             }
         }
+    }
+
+    private var recordingInProgressView: some View {
+        VStack(spacing: 40) {
+            Spacer()
+
+            VStack(spacing: 20) {
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(.red)
+                            .frame(width: 12, height: 12)
+                        Text("Recording")
+                            .foregroundColor(.red)
+                            .fontWeight(.semibold)
+                    }
+
+                    if let duration = recordingManager?.recordingDuration {
+                        Text(duration.formattedDuration())
+                            .font(.system(.largeTitle, design: .monospaced))
+                            .fontWeight(.medium)
+                    }
+                }
+                .padding()
+                .background(Color.red.opacity(0.1))
+                .cornerRadius(12)
+
+                if let error = recordingManager?.errorMessage {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .padding()
+                        .background(Color.red.opacity(0.1))
+                        .cornerRadius(8)
+                }
+            }
+
+            Button {
+                Task {
+                    await recordingManager?.stopRecording()
+                    onStopRecording?()
+                }
+            } label: {
+                Label("Stop Recording", systemImage: "stop.fill")
+                    .frame(maxWidth: 200)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            .controlSize(.large)
+
+            Spacer()
+        }
+        .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var tabBar: some View {
@@ -153,23 +214,6 @@ struct RecordingDetailView: View {
             }
         }
         .background(Color(NSColor.controlBackgroundColor))
-    }
-
-    private func deleteRecording() {
-        if let fileURLPath = recording.fileURL {
-            let fileURL = URL(fileURLWithPath: fileURLPath)
-            if FileManager.default.fileExists(atPath: fileURL.path) {
-                do {
-                    try FileManager.default.removeItem(at: fileURL)
-                    print("✅ Deleted audio file: \(fileURL.lastPathComponent)")
-                } catch {
-                    print("❌ Failed to delete audio file: \(error.localizedDescription)")
-                }
-            }
-        }
-
-        modelContext.delete(recording)
-        dismiss()
     }
 
     private func tabIcon(for tab: Tab) -> String {

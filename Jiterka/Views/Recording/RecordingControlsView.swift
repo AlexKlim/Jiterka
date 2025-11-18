@@ -9,87 +9,88 @@ import SwiftUI
 
 struct RecordingControlsView: View {
     @ObservedObject var recordingManager: ScreenCaptureAudioManager
-    let onStopRecording: () async -> Void
+    let onStartRecording: () -> Void
+    @State private var showSettings = false
+    @AppStorage("JiteraBoostAPIKey") private var apiKey: String = ""
+
+    private var isConfigured: Bool {
+        !apiKey.isEmpty
+    }
 
     var body: some View {
         VStack(spacing: 30) {
+            HStack {
+                Spacer()
+                Button {
+                    showSettings.toggle()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Settings")
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+
             Spacer()
+
+            Image("JiteraLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 80, height: 80)
+                .padding(.bottom, 10)
 
             Text("Meeting Audio Recorder")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            if recordingManager.isRecording {
-                VStack(spacing: 8) {
+            if !isConfigured {
+                VStack(spacing: 12) {
                     HStack(spacing: 8) {
-                        Circle()
-                            .fill(.red)
-                            .frame(width: 12, height: 12)
-                        Text("Recording")
-                            .foregroundColor(.red)
-                            .fontWeight(.semibold)
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("API Key Required")
+                            .font(.headline)
+                            .foregroundStyle(.orange)
                     }
 
-                    Text(formatDuration(recordingManager.recordingDuration))
-                        .font(.system(.title, design: .monospaced))
-                        .fontWeight(.medium)
+                    Text("Configure your JiteraBoost API key in Settings to start recording")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Label("Open Settings", systemImage: "gearshape")
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .padding()
-                .background(Color.red.opacity(0.1))
+                .padding(20)
+                .background(Color.orange.opacity(0.1))
                 .cornerRadius(12)
+                .frame(maxWidth: 400)
             }
 
-            if let error = recordingManager.errorMessage {
-                Text(error)
-                    .foregroundColor(.red)
-                    .padding()
-                    .background(Color.red.opacity(0.1))
-                    .cornerRadius(8)
-            }
-
-            HStack(spacing: 16) {
-                if recordingManager.isRecording {
-                    Button {
-                        Task {
-                            await recordingManager.stopRecording()
-                            await onStopRecording()
-                        }
-                    } label: {
-                        Label("Stop Recording", systemImage: "stop.fill")
-                            .frame(maxWidth: 200)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .controlSize(.large)
-                } else {
-                    Button {
-                        Task {
-                            await recordingManager.startRecording()
-                        }
-                    } label: {
-                        Label("Start Recording", systemImage: "record.circle")
-                            .frame(maxWidth: 200)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+            if isConfigured {
+                Button {
+                    onStartRecording()
+                } label: {
+                    Label("Start Recording", systemImage: "record.circle")
+                        .frame(maxWidth: 200)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
             }
 
             Spacer()
         }
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = Int(duration) / 60 % 60
-        let seconds = Int(duration) % 60
-
-        if hours > 0 {
-            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            return String(format: "%02d:%02d", minutes, seconds)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
         }
     }
 }

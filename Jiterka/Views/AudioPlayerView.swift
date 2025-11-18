@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AudioPlayerView: View {
     @ObservedObject var playerManager: AudioPlayerManager
+    var isDisabled: Bool = false
     @State private var isHoveringPlayPause = false
     @State private var isHoveringStop = false
 
@@ -28,11 +29,13 @@ struct AudioPlayerView: View {
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
-                                .fill(Color.accentColor)
+                                .fill(isDisabled ? Color.gray : Color.accentColor)
                         )
                         .scaleEffect(isHoveringPlayPause ? 1.05 : 1.0)
                 }
                 .buttonStyle(.plain)
+                .disabled(isDisabled)
+                .opacity(isDisabled ? 0.5 : 1.0)
                 .onHover { hovering in
                     withAnimation(.easeInOut(duration: 0.15)) {
                         isHoveringPlayPause = hovering
@@ -48,7 +51,7 @@ struct AudioPlayerView: View {
                         in: 0...max(playerManager.duration, 1)
                     )
                     .tint(Color.accentColor)
-                    .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
+                    .disabled(isDisabled || (!playerManager.isPlaying && playerManager.currentTime == 0))
                     .controlSize(.small)
 
                     HStack {
@@ -84,8 +87,8 @@ struct AudioPlayerView: View {
                         .scaleEffect(isHoveringStop ? 1.05 : 1.0)
                 }
                 .buttonStyle(.plain)
-                .disabled(!playerManager.isPlaying && playerManager.currentTime == 0)
-                .opacity((!playerManager.isPlaying && playerManager.currentTime == 0) ? 0.3 : 1)
+                .disabled(isDisabled || (!playerManager.isPlaying && playerManager.currentTime == 0))
+                .opacity((isDisabled || (!playerManager.isPlaying && playerManager.currentTime == 0)) ? 0.3 : 1)
                 .onHover { hovering in
                     withAnimation(.easeInOut(duration: 0.15)) {
                         isHoveringStop = hovering

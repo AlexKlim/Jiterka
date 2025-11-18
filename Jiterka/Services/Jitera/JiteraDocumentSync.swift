@@ -214,8 +214,7 @@ class JiteraDocumentSync: JiteraBoostClient {
 
         let response = try await makeRequest(
             systemPrompt: systemPrompt,
-            userPrompt: userPrompt,
-            responseSchema: [:]
+            userPrompt: userPrompt
         )
 
         guard let firstChoice = response.choices?.first else {

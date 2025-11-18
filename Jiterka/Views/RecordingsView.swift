@@ -16,6 +16,7 @@ struct RecordingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Recording.timestamp, order: .reverse) private var recordings: [Recording]
     @State private var selectedRecording: Recording?
+    @State private var recordingToDelete: Recording?
 
     var body: some View {
         NavigationSplitView {
@@ -30,7 +31,7 @@ struct RecordingsView: View {
                         }
                         .contextMenu {
                             Button(role: .destructive) {
-                                deleteRecording(recording)
+                                recordingToDelete = recording
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
@@ -66,14 +67,74 @@ struct RecordingsView: View {
             }
         } detail: {
             if let recording = selectedRecording {
-                RecordingDetailView(recording: recording)
+                RecordingDetailView(
+                    recording: recording,
+                    recordingManager: recordingManager,
+                    onStopRecording: {
+                        Task {
+                            await finalizeRecording(recording)
+                        }
+                    },
+                    onRequestDelete: {
+                        recordingToDelete = recording
+                    }
+                )
             } else {
                 RecordingControlsView(
                     recordingManager: recordingManager,
-                    onStopRecording: saveRecording
+                    onStartRecording: startRecording
                 )
             }
         }
+        .confirmationDialog("Delete Recording", isPresented: .constant(recordingToDelete != nil)) {
+            Button("Delete", role: .destructive) {
+                if let recording = recordingToDelete {
+                    deleteRecording(recording)
+                    recordingToDelete = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                recordingToDelete = nil
+            }
+        } message: {
+            Text("Are you sure you want to delete this recording? This action cannot be undone.")
+        }
+    }
+
+    private func startRecording() {
+        let timestamp = Date()
+        let recording = Recording(
+            timestamp: timestamp,
+            duration: 0,
+            name: "Untitled meeting",
+            fileURL: nil
+        )
+        modelContext.insert(recording)
+        selectedRecording = recording
+
+        Task {
+            await recordingManager.startRecording()
+        }
+    }
+
+    private func finalizeRecording(_ recording: Recording) async {
+        guard let audioURL = recordingManager.lastRecordingURL else { return }
+
+        let asset = AVURLAsset(url: audioURL)
+        let duration: TimeInterval
+        do {
+            let assetDuration = try await asset.load(.duration)
+            duration = CMTimeGetSeconds(assetDuration)
+        } catch {
+            print("Failed to load audio duration: \(error.localizedDescription)")
+            duration = 0
+        }
+
+        recording.duration = duration
+        recording.fileURL = audioURL.path
+        try? modelContext.save()
+
+        await transcribeRecording(recording, audioURL: audioURL)
     }
 
     private func saveRecording() async {
@@ -141,7 +202,11 @@ struct RecordingsView: View {
     }
 
     private func deleteRecording(_ recording: Recording) {
-        withAnimation {
+        withAnimation {            
+            if selectedRecording?.id == recording.id {
+                selectedRecording = recordings.first { $0.id != recording.id }
+            }
+
             if let fileURLPath = recording.fileURL {
                 let fileURL = URL(fileURLWithPath: fileURLPath)
                 if FileManager.default.fileExists(atPath: fileURL.path) {

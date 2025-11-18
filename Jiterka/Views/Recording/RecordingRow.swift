@@ -27,11 +27,12 @@ struct RecordingRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(recording.timestamp.formatted(date: .abbreviated, time: .shortened))
+            Text(recording.name)
                 .font(.headline)
+                .fontWeight(.semibold)
 
             HStack {
-                Text(recording.name)
+                Text(recording.timestamp.formatted(date: .abbreviated, time: .shortened))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
@@ -41,17 +42,11 @@ struct RecordingRow: View {
                     ProcessingIndicator()
                 }
 
-                Text(formatDuration(recording.duration))
+                Text(recording.duration.formattedDurationCompact())
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 4)
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
-        return String(format: "%d:%02d", minutes, seconds)
     }
 }

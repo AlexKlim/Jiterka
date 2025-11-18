@@ -25,9 +25,10 @@ struct CollapsibleHeaderView: View {
                         onShowSyncPanel: onShowSyncPanel
                     )
 
-                    if recording.fileURL != nil {
-                        AudioPlayerView(playerManager: playerManager)
-                    }
+                    AudioPlayerView(
+                        playerManager: playerManager,
+                        isDisabled: recording.fileURL == nil
+                    )
                 }
                 .padding(20)
                 .background(Color(NSColor.windowBackgroundColor))
@@ -108,6 +109,9 @@ struct CollapsibleHeaderView: View {
             loadRecordingAudio()
         }
         .onChange(of: recording.id) {
+            loadRecordingAudio()
+        }
+        .onChange(of: recording.fileURL) {
             loadRecordingAudio()
         }
         .onDisappear {
