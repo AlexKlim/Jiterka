@@ -16,7 +16,7 @@ class PyannoteCloudService {
 
     private init() {
         // Super DEV key. I don't worry, can be in repo
-        self.apiKey = "sk_83a1f6b04ce8418d92cad02bfc29763f" // ProcessInfo.processInfo.environment["PYANNOTE_API_KEY"]
+        self.apiKey = "sk_XXXXX" // ProcessInfo.processInfo.environment["PYANNOTE_API_KEY"]
     }
 
     func setAPIKey(_ key: String) {
