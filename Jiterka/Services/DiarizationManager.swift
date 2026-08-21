@@ -20,7 +20,11 @@ enum DiarizationMode {
 class DiarizationManager: ObservableObject {
     private var diarizerManager: OfflineDiarizerManager?
 
-    private let mode: DiarizationMode = .pyannoteCloud
+    // Diarization runs on the device by default, so the audio never leaves the
+    // machine. .pythonServer uses the local pyannote server in
+    // PyannoteDiarization/, and .pyannoteCloud calls the hosted pyannote.ai API
+    // if you want to compare the results.
+    private let mode: DiarizationMode = .fluidAudioWithFallback
 
     init() {}
 
